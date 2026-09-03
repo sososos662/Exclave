@@ -498,3 +498,5 @@ lukechampine.com/blake3 v1.4.1/go.mod h1:QFosUxmjB8mnrWFSNwKmvxHpfY72bmD2tQ0kBMM
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903213944-07ba68d53848 h1:ZVNinfSQ9+pflDP0wKm7tDw753kolYzjm/dNa+cbZ2g=
 github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903213944-07ba68d53848/go.mod h1:QqE6sDUWzl5zi9nGIjAAFe300+1F0gJ7ojtRslQC/Dk=
+github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903225014-09b5c61731fa h1:e5I220xtA4xc+Kn6aQIP+HCSPADmUixkydLqbD2KT9s=
+github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903225014-09b5c61731fa/go.mod h1:QqE6sDUWzl5zi9nGIjAAFe300+1F0gJ7ojtRslQC/Dk=
