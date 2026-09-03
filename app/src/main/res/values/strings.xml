@@ -57,6 +57,8 @@
     <string name="ws_max_early_data">Max early data</string>
     <string name="ws_browser_forwarding">Browser forwarding</string>
     <string name="ws_browser_forwarding_sum">Forward WebSocket through browser</string>
+    <string name="ws_fronting_host">Fronting host</string>
+    <string name="ws_fronting_host_sum">Prepend a benign HEAD request to this host before the WebSocket handshake (plaintext WS only)</string>
     <string name="speed_interval">Speed notification update interval</string>
     <string name="cag_misc">Misc settings</string>
     <string name="show_direct_speed">Show direct speed</string>
