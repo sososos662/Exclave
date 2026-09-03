@@ -496,3 +496,5 @@ honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt
 lukechampine.com/blake3 v1.4.1 h1:I3Smz7gso8w4/TunLKec6K2fn+kyKtDxr/xcQEN84Wg=
 lukechampine.com/blake3 v1.4.1/go.mod h1:QFosUxmjB8mnrWFSNwKmvxHpfY72bmD2tQ0kBMM3kwo=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
+github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903213944-07ba68d53848 h1:ZVNinfSQ9+pflDP0wKm7tDw753kolYzjm/dNa+cbZ2g=
+github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903213944-07ba68d53848/go.mod h1:QqE6sDUWzl5zi9nGIjAAFe300+1F0gJ7ojtRslQC/Dk=
