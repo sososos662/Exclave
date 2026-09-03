@@ -172,6 +172,7 @@ object Key {
     const val SERVER_SPLITHTTP_MODE = "serverSplithttpMode"
     const val SERVER_SPLITHTTP_EXTRA = "serverSplithttpExtra"
     const val SERVER_WS_BROWSER_FORWARDING = "serverWsBrowserForwarding"
+    const val SERVER_WS_FRONTING_HOST = "serverWsFrontingHost"
     const val SERVER_SH_BROWSER_FORWARDING = "serverShBrowserForwarding"
     const val SERVER_EARLY_DATA_HEADER_NAME = "serverEarlyDataHeaderName"
     const val SERVER_CONFIG = "serverConfig"
