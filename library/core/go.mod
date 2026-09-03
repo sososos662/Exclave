@@ -79,4 +79,4 @@ require (
 replace gvisor.dev/gvisor => gvisor.dev/gvisor v0.0.0-20250429202743-3a608a52255d
 
 // fronting fork: ws domain-fronting (fronting_host) support
-replace github.com/exclavenetwork/exclave-core/v5 => github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903213944-07ba68d53848
+replace github.com/exclavenetwork/exclave-core/v5 => github.com/sososos662/exclave-core/v5 v5.50.2-fronting.1.0.20260903225014-09b5c61731fa
