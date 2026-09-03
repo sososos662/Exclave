@@ -1233,6 +1233,7 @@ public class V2RayConfig {
         public String earlyDataHeaderName;
         public Boolean useBrowserForwarding;
         public Boolean parseXForwardedFor;
+        public String frontingHost;
 
     }
 
