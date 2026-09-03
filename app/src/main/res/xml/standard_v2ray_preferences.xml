@@ -294,6 +294,13 @@
             app:key="serverWsBrowserForwarding"
             app:summary="@string/ws_browser_forwarding_sum"
             app:title="@string/ws_browser_forwarding" />
+
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_compare_arrows_24"
+            app:key="serverWsFrontingHost"
+            app:title="@string/ws_fronting_host"
+            app:summary="@string/ws_fronting_host_sum"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory
