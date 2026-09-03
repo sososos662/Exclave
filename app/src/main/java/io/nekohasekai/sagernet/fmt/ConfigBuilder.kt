@@ -22,6 +22,7 @@ package io.nekohasekai.sagernet.fmt
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.provider.Settings
 import com.github.shadowsocks.plugin.PluginConfiguration
 import com.github.shadowsocks.plugin.PluginManager
@@ -979,6 +980,8 @@ fun buildV2RayConfig(
                                                 if (bean.frontingHost.isNotEmpty()) {
                                                     frontingHost = bean.frontingHost
                                                 }
+                                                // TEMPORARY fronting diagnosis (VISIBLE warning log):
+                                                android.util.Log.w("FRONTINGDBG", "beanfronting=[" + bean.frontingHost + "]")
 
                                                 if (bean.maxEarlyData > 0) {
                                                     maxEarlyData = bean.maxEarlyData
@@ -992,6 +995,8 @@ fun buildV2RayConfig(
                                                     useBrowserForwarding = true
                                                     requireWs = true
                                                 }
+                                                // TEMPORARY: dump effective ws JSON:
+                                                android.util.Log.w("FRONTINGDBG", "wsjson=" + gson.toJson(this))
                                             }
                                         }
                                         "http" -> {
