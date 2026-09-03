@@ -66,6 +66,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
     public String serverNameToVerify;
 
     public Boolean wsUseBrowserForwarder;
+    public String frontingHost;
     public Boolean shUseBrowserForwarder;
     public Boolean allowInsecure;
     public String packetEncoding;
@@ -134,6 +135,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
         if (grpcMultiMode == null) grpcMultiMode = false;
         if (maxEarlyData == null) maxEarlyData = 0;
         if (wsUseBrowserForwarder == null) wsUseBrowserForwarder = false;
+        if (frontingHost == null) frontingHost = "";
         if (shUseBrowserForwarder == null) shUseBrowserForwarder = false;
         if (certificates == null) certificates = "";
         if (pinnedPeerCertificateChainSha256 == null) pinnedPeerCertificateChainSha256 = "";
@@ -179,7 +181,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
 
     @Override
     public void serialize(ByteBufferOutput output) {
-        output.writeInt(39);
+        output.writeInt(40);
         super.serialize(output);
 
         output.writeString(uuid);
@@ -204,6 +206,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
                 output.writeInt(maxEarlyData);
                 output.writeBoolean(wsUseBrowserForwarder);
                 output.writeString(earlyDataHeaderName);
+                output.writeString(frontingHost);
                 break;
             }
             case "http": {
@@ -346,6 +349,9 @@ public abstract class StandardV2RayBean extends AbstractBean {
                 wsUseBrowserForwarder = input.readBoolean();
                 if (version >= 2) {
                     earlyDataHeaderName = input.readString();
+                }
+                if (version >= 40) {
+                    frontingHost = input.readString();
                 }
                 break;
             }
