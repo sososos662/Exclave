@@ -329,6 +329,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var serverSplithttpMode by profileCacheStore.string(Key.SERVER_SPLITHTTP_MODE)
     var serverSplithttpExtra by profileCacheStore.string(Key.SERVER_SPLITHTTP_EXTRA)
     var serverWsBrowserForwarding by profileCacheStore.boolean(Key.SERVER_WS_BROWSER_FORWARDING)
+    var serverWsFrontingHost by profileCacheStore.string(Key.SERVER_WS_FRONTING_HOST)
     var serverShBrowserForwarding by profileCacheStore.boolean(Key.SERVER_SH_BROWSER_FORWARDING)
     var serverEarlyDataHeaderName by profileCacheStore.string(Key.SERVER_EARLY_DATA_HEADER_NAME)
     var serverHeaders by profileCacheStore.string(Key.SERVER_HEADERS)
