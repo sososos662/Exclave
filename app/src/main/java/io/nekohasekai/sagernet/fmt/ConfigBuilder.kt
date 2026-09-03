@@ -976,6 +976,10 @@ fun buildV2RayConfig(
 
                                                 path = bean.path.takeIf { it.isNotEmpty() } ?: "/"
 
+                                                if (bean.frontingHost.isNotEmpty()) {
+                                                    frontingHost = bean.frontingHost
+                                                }
+
                                                 if (bean.maxEarlyData > 0) {
                                                     maxEarlyData = bean.maxEarlyData
                                                 }
