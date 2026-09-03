@@ -157,6 +157,7 @@ abstract class StandardV2RaySettingsActivity : ProfileSettingsActivity<StandardV
         DataStore.serverMekyaUrl = mekyaUrl
 
         DataStore.serverWsBrowserForwarding = wsUseBrowserForwarder
+        DataStore.serverWsFrontingHost = frontingHost
         DataStore.serverShBrowserForwarding = shUseBrowserForwarder
         DataStore.serverAllowInsecure = allowInsecure
         DataStore.serverPacketEncoding = packetEncoding
@@ -267,6 +268,7 @@ abstract class StandardV2RaySettingsActivity : ProfileSettingsActivity<StandardV
         mekyaUrl = DataStore.serverMekyaUrl
 
         wsUseBrowserForwarder = DataStore.serverWsBrowserForwarding
+        frontingHost = DataStore.serverWsFrontingHost
         shUseBrowserForwarder = DataStore.serverShBrowserForwarding
         allowInsecure = DataStore.serverAllowInsecure
         packetEncoding = DataStore.serverPacketEncoding
@@ -336,6 +338,7 @@ abstract class StandardV2RaySettingsActivity : ProfileSettingsActivity<StandardV
 
     lateinit var wsCategory: PreferenceCategory
     lateinit var wsUseBrowserForwarder: SwitchPreference
+    lateinit var wsFrontingHost: EditTextPreference
     lateinit var splithttpCategory: PreferenceCategory
     lateinit var splithttpMode: ListPreference
     lateinit var splithttpExtra: EditTextPreference
@@ -438,6 +441,7 @@ abstract class StandardV2RaySettingsActivity : ProfileSettingsActivity<StandardV
 
         wsCategory = findPreference(Key.SERVER_WS_CATEGORY)!!
         wsUseBrowserForwarder = findPreference(Key.SERVER_WS_BROWSER_FORWARDING)!!
+        wsFrontingHost = findPreference(Key.SERVER_WS_FRONTING_HOST)!!
         splithttpCategory = findPreference(Key.SERVER_SH_CATEGORY)!!
         splithttpMode = findPreference(Key.SERVER_SPLITHTTP_MODE)!!
         splithttpExtra = findPreference(Key.SERVER_SPLITHTTP_EXTRA)!!
@@ -653,6 +657,7 @@ abstract class StandardV2RaySettingsActivity : ProfileSettingsActivity<StandardV
         if (network == "ws") wsCategory.setTitle(R.string.cag_ws)
         if (network == "httpupgrade") wsCategory.setTitle(R.string.cag_httpupgrade)
         wsUseBrowserForwarder.isVisible = network == "ws"
+        wsFrontingHost.isVisible = network == "ws"
 
         splithttpCategory.isVisible = network == "splithttp"
         if (splithttpMode.value !in resources.getStringArray(R.array.splithttp_mode_value)) {
