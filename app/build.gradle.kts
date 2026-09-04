@@ -17,13 +17,21 @@ android {
         resConfigs("en", "ru")
     }
 
-    packaging {
-        resources {
-            // geo bases are unused by the default config (no geo rules) and
-            // downloadable on demand via Assets screen; saves ~25MB raw.
-            excludes += "assets/exclave-core/geoip.dat"
-            excludes += "assets/exclave-core/geosite.dat"
-        }
+    // NOTE: packaging.resources.excludes does NOT cover assets/ on AGP 9,
+    // so geo bases are removed by the task hook below instead.
+}
+
+// Geo bases (geoip.dat/geosite.dat, ~25MB raw) are unused by the default
+// config (no geo rules; downloadable on demand via Assets screen), so drop
+// them from the APK. Deleting the gitignored downloads right before the
+// asset merge is bulletproof across AGP versions (excludes-DSL does not
+// cover assets/).
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    doFirst {
+        delete(
+            "src/main/assets/exclave-core/geoip.dat",
+            "src/main/assets/exclave-core/geosite.dat",
+        )
     }
 }
 
