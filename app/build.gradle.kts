@@ -10,6 +10,21 @@ setupApp()
 
 android {
     namespace = "io.nekohasekai.sagernet"
+
+    defaultConfig {
+        // shipped locales only: default (en) + ru. Other locales fall back
+        // to English; the in-app switcher lists the same set (arrays.xml).
+        resConfigs("en", "ru")
+    }
+
+    packaging {
+        resources {
+            // geo bases are unused by the default config (no geo rules) and
+            // downloadable on demand via Assets screen; saves ~25MB raw.
+            excludes += "assets/exclave-core/geoip.dat"
+            excludes += "assets/exclave-core/geosite.dat"
+        }
+    }
 }
 
 ksp {

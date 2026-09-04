@@ -6,6 +6,8 @@
 .DS_Store
 build/
 local.properties
+release.keystore
+*.jks
 /app/libs/
 /app/src/main/assets/exclave-core/*.dat
 jniLibs/
