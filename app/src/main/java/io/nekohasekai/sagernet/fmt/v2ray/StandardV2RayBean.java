@@ -599,6 +599,9 @@ public abstract class StandardV2RayBean extends AbstractBean {
         if (bean.earlyDataHeaderName == null || bean.earlyDataHeaderName.isEmpty() && !earlyDataHeaderName.isEmpty()) {
             bean.earlyDataHeaderName = earlyDataHeaderName;
         }
+        if (bean.frontingHost == null || bean.frontingHost.isEmpty() && !frontingHost.isEmpty()) {
+            bean.frontingHost = frontingHost;
+        }
         bean.wsUseBrowserForwarder = wsUseBrowserForwarder;
         bean.shUseBrowserForwarder = shUseBrowserForwarder;
         if (bean.certificates == null || bean.certificates.isEmpty() && !certificates.isEmpty()) {

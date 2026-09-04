@@ -97,6 +97,9 @@ fun parseSingBoxOutbound(outbound: JsonObject): List<AbstractBean> {
                                 transport.getString("early_data_header_name")?.also {
                                     v2rayBean.earlyDataHeaderName = it
                                 }
+                                transport.getString("fronting_host")?.also {
+                                    v2rayBean.frontingHost = it
+                                }
                             }
                             "http" -> {
                                 v2rayBean.type = "tcp"

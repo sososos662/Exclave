@@ -346,6 +346,9 @@ fun parseV2RayOutbound(outbound: JsonObject): List<AbstractBean> {
                                 wsSettings.getString("earlyDataHeaderName")?.also {
                                     v2rayBean.earlyDataHeaderName = it
                                 }
+                                wsSettings.getString("frontingHost")?.also {
+                                    v2rayBean.frontingHost = it
+                                }
                                 wsSettings.getString("path")?.also { path ->
                                     v2rayBean.path = path
                                     try {

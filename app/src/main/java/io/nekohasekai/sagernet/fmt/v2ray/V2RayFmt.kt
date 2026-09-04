@@ -400,6 +400,9 @@ fun parseV2Ray(link: String): StandardV2RayBean {
             url.queryParameter("ed")?.toIntOrNull()?.let {
                 bean.maxEarlyData = it // non-standard, invented by SagerNet and adopted by some other software
             }
+            url.queryParameter("fh")?.let {
+                bean.frontingHost = it // non-standard, our domain-fronting extension
+            }
         }
         "quic" -> {
             url.queryParameter("headerType")?.let {
@@ -595,6 +598,9 @@ private fun parseV2RayN(json: JsonObject): VMessBean {
         "ws" -> {
             bean.host = host
             bean.path = path
+            json.getString("fh")?.takeIf { it.isNotEmpty() }?.let {
+                bean.frontingHost = it // non-standard, our domain-fronting extension
+            }
             try {
                 // RPRX's smart-assed invention. This of course will break under some conditions.
                 val u = Libexclavecore.parseURL(bean.path)
@@ -850,6 +856,10 @@ fun StandardV2RayBean.toUri(): String? {
             if (maxEarlyData > 0) {
                 // non-standard, invented by SagerNet and adopted by some other software
                 builder.addQueryParameter("ed", maxEarlyData.toString())
+            }
+            if (frontingHost.isNotEmpty()) {
+                // non-standard, our domain-fronting extension
+                builder.addQueryParameter("fh", frontingHost)
             }
         }
         "http" -> {

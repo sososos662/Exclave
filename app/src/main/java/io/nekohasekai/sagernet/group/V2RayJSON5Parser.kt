@@ -203,6 +203,10 @@ fun parseV2Ray5Outbound(outbound: JsonObject): List<AbstractBean> {
                                     ?: transportSettings.getString("early_data_header_name"))?.also {
                                     v2rayBean.earlyDataHeaderName = it
                                 }
+                                (transportSettings.getString("frontingHost")
+                                    ?: transportSettings.getString("fronting_host"))?.also {
+                                    v2rayBean.frontingHost = it
+                                }
                                 transportSettings.getArray("header")?.forEach {
                                     if (it.getString("key")?.lowercase() == "host") {
                                         v2rayBean.host = it.getStringArray("value")?.joinToString("\n")
@@ -271,6 +275,10 @@ fun parseV2Ray5Outbound(outbound: JsonObject): List<AbstractBean> {
                                 (transportSettings.getString("earlyDataHeaderName")
                                     ?: transportSettings.getString("early_data_header_name"))?.also {
                                     v2rayBean.earlyDataHeaderName = it
+                                }
+                                (transportSettings.getString("frontingHost")
+                                    ?: transportSettings.getString("fronting_host"))?.also {
+                                    v2rayBean.frontingHost = it
                                 }
                             }
                         }
