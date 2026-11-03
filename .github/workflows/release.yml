@@ -7,6 +7,7 @@ on:
       - "app/**"
       - "buildSrc/**"
       - "library/**"
+      - "bin/**"
       - "gradle/**"
       - "version.properties"
       - ".github/workflows/release.yml"
@@ -30,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Test signing verification
+        run: bash bin/test-verify-apk-signatures.sh
       - name: Validate release tag
         if: github.event.inputs.release == 'y'
         env:
@@ -100,12 +103,7 @@ jobs:
           signer="$ANDROID_HOME/build-tools/37.0.0/apksigner"
           previous="$RUNNER_TEMP/Exclave-previous.apk"
           curl --fail --location --retry 3 'https://github.com/sososos662/Exclave/releases/download/v0.17.55-fronting.2/Exclave-0.17.55-arm64-v8a.apk' --output "$previous"
-          expected=$("$signer" verify --print-certs "$previous" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          test -n "$expected"
-          while IFS= read -r apk; do
-            actual=$("$signer" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-            test "$actual" = "$expected" || { echo "Signing certificate changed: $apk" >&2; exit 1; }
-          done < <(find app/build/outputs/apk -name '*.apk')
+          bash bin/verify-apk-signatures.sh "$signer" "$previous" app/build/outputs/apk/oss/release/*.apk app/build/outputs/apk/legacy/release/*.apk
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
