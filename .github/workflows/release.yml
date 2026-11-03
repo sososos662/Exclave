@@ -152,7 +152,7 @@ jobs:
         run: |
           mkdir apks
           find artifacts -name "*.apk" -exec cp {} apks \;
-          sha256sum apks/*.apk > apks/SHA256SUMS.txt
+          (cd apks && sha256sum *.apk > SHA256SUMS.txt)
           flags=()
           if [ "$PRERELEASE" = y ]; then flags+=(--prerelease); fi
           gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "$RELEASE_TAG" --notes-file FRONTING_RELEASE_NOTES.md "${flags[@]}" ./apks/*

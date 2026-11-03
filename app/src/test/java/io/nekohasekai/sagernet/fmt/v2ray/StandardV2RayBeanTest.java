@@ -1,6 +1,7 @@
 package io.nekohasekai.sagernet.fmt.v2ray;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.esotericsoftware.kryo.io.ByteBufferInput;
@@ -9,15 +10,20 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Random;
 import java.util.function.Supplier;
 
 import io.nekohasekai.sagernet.fmt.KryoConverters;
+import io.nekohasekai.sagernet.fmt.http.HttpBean;
+import io.nekohasekai.sagernet.fmt.shadowsocks.ShadowsocksBean;
+import io.nekohasekai.sagernet.fmt.socks.SOCKSBean;
 import io.nekohasekai.sagernet.fmt.trojan.TrojanBean;
 
 public class StandardV2RayBeanTest {
 
     private static final List<Supplier<StandardV2RayBean>> TYPES = List.of(
-            VLESSBean::new, VMessBean::new, TrojanBean::new);
+            VLESSBean::new, VMessBean::new, TrojanBean::new,
+            HttpBean::new, SOCKSBean::new, ShadowsocksBean::new);
 
     private static StandardV2RayBean profile(Supplier<StandardV2RayBean> factory, String security) {
         StandardV2RayBean bean = factory.get();
@@ -42,6 +48,9 @@ public class StandardV2RayBeanTest {
         if (bean instanceof VLESSBean vless) vless.flow = "xtls-rprx-vision";
         if (bean instanceof VMessBean vmess) vmess.alterId = 7;
         if (bean instanceof TrojanBean trojan) trojan.password = "synthetic-test-password";
+        if (bean instanceof HttpBean http) http.password = "synthetic-http-password";
+        if (bean instanceof SOCKSBean socks) socks.password = "synthetic-socks-password";
+        if (bean instanceof ShadowsocksBean ss) ss.password = "synthetic-ss-password";
         return bean;
     }
 
@@ -49,7 +58,11 @@ public class StandardV2RayBeanTest {
     // Do not generate these fixtures with the current serializer: that would hide migrations.
     private static byte[] legacy(StandardV2RayBean bean, int version, boolean fronting) {
         ByteBufferOutput out = new ByteBufferOutput(512, -1);
+        int httpVersion = version == 40 && !fronting ? 5 : 3;
         if (bean instanceof TrojanBean) out.writeInt(2);
+        if (bean instanceof SOCKSBean) out.writeInt(4);
+        if (bean instanceof ShadowsocksBean) out.writeInt(6);
+        if (bean instanceof HttpBean) out.writeInt(httpVersion);
         out.writeInt(version);
         out.writeString(bean.serverAddress);
         out.writeInt(bean.serverPort);
@@ -105,6 +118,8 @@ public class StandardV2RayBeanTest {
         out.writeBoolean(bean.mux);
         out.writeInt(bean.muxConcurrency);
         out.writeString(bean.muxPacketEncoding);
+        if (bean instanceof ShadowsocksBean ss) out.writeBoolean(ss.singUoT);
+        if (bean instanceof SOCKSBean socks) out.writeBoolean(socks.singUoT);
         out.writeBoolean(bean.singMux);
         out.writeString(bean.singMuxProtocol);
         out.writeInt(bean.singMuxMaxConnections);
@@ -117,6 +132,25 @@ public class StandardV2RayBeanTest {
         out.writeBoolean(bean.hy2ChromeParrot);
         out.writeString(bean.echQueryName);
         if (bean instanceof TrojanBean trojan) out.writeString(trojan.password);
+        if (bean instanceof HttpBean http) {
+            out.writeString(http.username);
+            out.writeString(http.password);
+            out.writeBoolean(false); // v3: retired trustTunnelUot; v5: connectUDP.
+            if (httpVersion >= 5) out.writeString(http.uriTemplate);
+        }
+        if (bean instanceof SOCKSBean socks) {
+            out.writeInt(socks.protocol);
+            out.writeString(socks.username);
+            out.writeString(socks.password);
+            out.writeBoolean(socks.singUoT);
+        }
+        if (bean instanceof ShadowsocksBean ss) {
+            out.writeString(ss.method);
+            out.writeString(ss.password);
+            out.writeString(ss.plugin);
+            out.writeBoolean(ss.experimentReducedIvHeadEntropy);
+            out.writeBoolean(ss.singUoT);
+        }
         out.writeInt(2); // AbstractBean's extra metadata.
         out.writeString(bean.name);
         out.writeInt(bean.extraType);
@@ -145,6 +179,7 @@ public class StandardV2RayBeanTest {
         if (expected instanceof VLESSBean vless) assertEquals(vless.flow, ((VLESSBean) actual).flow);
         if (expected instanceof VMessBean vmess) assertEquals(vmess.alterId, ((VMessBean) actual).alterId);
         if (expected instanceof TrojanBean trojan) assertEquals(trojan.password, ((TrojanBean) actual).password);
+        assertArrayEquals(KryoConverters.serialize(expected), KryoConverters.serialize(actual));
     }
 
     @Test
@@ -180,13 +215,43 @@ public class StandardV2RayBeanTest {
     }
 
     @Test
+    public void randomizedLegacyProfilesRemainEquivalent() {
+        String[] words = {"", "none", "tls", "reality", "front.example",
+                "xn--e1afmkfd.xn--p1ai", "test-".repeat(300)};
+        String[] securities = {"none", "tls", "reality"};
+        Random random = new Random(662);
+        for (int i = 0; i < 15000; i++) {
+            var factory = TYPES.get(random.nextInt(TYPES.size()));
+            var expected = profile(factory, securities[random.nextInt(securities.length)]);
+            boolean fronting = random.nextBoolean();
+            if (fronting) expected.frontingHost = words[random.nextInt(words.length)];
+            expected.sni = words[random.nextInt(words.length)];
+            expected.certificates = words[random.nextInt(words.length)];
+            expected.mux = random.nextBoolean();
+            expected.muxConcurrency = random.nextInt(1024);
+            expected.maxEarlyData = random.nextInt(4096);
+            expected.singMux = random.nextBoolean();
+            expected.singMuxMaxConnections = random.nextInt(256);
+            expected.singMuxMinStreams = random.nextInt(256);
+            expected.singMuxMaxStreams = random.nextInt(256);
+            expected.singMuxPadding = random.nextBoolean();
+            expected.echEnabled = random.nextBoolean();
+            if (expected instanceof VLESSBean bean) bean.flow = random.nextBoolean() ? "" : "xtls-rprx-vision";
+            if (expected instanceof VMessBean bean) bean.alterId = random.nextInt(64);
+            var actual = KryoConverters.deserialize(factory.get(), legacy(expected, 40, fronting));
+            assertArrayEquals("Synthetic migration case " + i,
+                    KryoConverters.serialize(expected), KryoConverters.serialize(actual));
+        }
+    }
+
+    @Test
     public void newProfilesUseADistinctForkVersionAndRoundTrip() {
         for (var factory : TYPES) {
             var expected = profile(factory, "none");
             expected.frontingHost = "front.example";
             byte[] bytes = KryoConverters.serialize(expected);
             ByteBufferInput input = new ByteBufferInput(bytes);
-            if (expected instanceof TrojanBean) input.readInt();
+            if (!(expected instanceof VLESSBean) && !(expected instanceof VMessBean)) input.readInt();
             assertTrue("The fork must not reuse upstream's version namespace", input.readInt() > 0xffff);
             assertProfile(expected, KryoConverters.deserialize(factory.get(), bytes));
         }

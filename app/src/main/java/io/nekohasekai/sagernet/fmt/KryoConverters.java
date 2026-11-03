@@ -78,12 +78,18 @@ public class KryoConverters {
                 try {
                     // Prefer our released v40 layout so existing installations upgrade intact.
                     profile.deserializeProfile(buffer, true);
-                } catch (KryoException | IllegalArgumentException | IndexOutOfBoundsException e) {
+                    if (!profile.matchesLegacyProfile(bytes, true)) {
+                        throw new KryoException("Legacy WebSocket profile did not round trip");
+                    }
+                } catch (RuntimeException e) {
                     if (!profile.isLegacyWsProfile()) throw e;
                     // Upstream v40 has no frontingHost. Retry on a FRESH bean: a failed
                     // TLS/REALITY read must not leave stale fields in the imported profile.
                     T upstream = newBean(bean);
                     ((StandardV2RayBean) upstream).deserializeProfile(new ByteBufferInput(bytes), false);
+                    if (!((StandardV2RayBean) upstream).matchesLegacyProfile(bytes, false)) {
+                        throw new KryoException("Upstream WebSocket profile did not round trip");
+                    }
                     bean = upstream;
                 }
             } else {

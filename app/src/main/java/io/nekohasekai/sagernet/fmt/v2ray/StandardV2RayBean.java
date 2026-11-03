@@ -19,9 +19,11 @@
 
 package io.nekohasekai.sagernet.fmt.v2ray;
 
+import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
-import com.esotericsoftware.kryo.KryoException;
+
+import java.util.Arrays;
 
 import io.nekohasekai.sagernet.fmt.AbstractBean;
 import io.nekohasekai.sagernet.fmt.shadowsocks.ShadowsocksBean;
@@ -37,6 +39,8 @@ public abstract class StandardV2RayBean extends AbstractBean {
     private static final int FRONTING_VERSION_FLAG = 0x10000;
     private transient boolean readLegacyWsFronting = true;
     private transient boolean legacyWsProfile;
+    private transient int standardProfileStart;
+    private transient int standardProfileEnd;
 
     public String uuid;
     public String encryption;
@@ -188,7 +192,11 @@ public abstract class StandardV2RayBean extends AbstractBean {
 
     @Override
     public void serialize(ByteBufferOutput output) {
-        output.writeInt(FRONTING_VERSION_FLAG | 40);
+        serializeStandard(output, FRONTING_VERSION_FLAG | 40, true);
+    }
+
+    private void serializeStandard(ByteBufferOutput output, int version, boolean fronting) {
+        output.writeInt(version);
         super.serialize(output);
 
         output.writeString(uuid);
@@ -213,7 +221,9 @@ public abstract class StandardV2RayBean extends AbstractBean {
                 output.writeInt(maxEarlyData);
                 output.writeBoolean(wsUseBrowserForwarder);
                 output.writeString(earlyDataHeaderName);
-                output.writeString(frontingHost);
+                if (fronting) {
+                    output.writeString(frontingHost);
+                }
                 break;
             }
             case "http": {
@@ -331,6 +341,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
 
     @Override
     public void deserialize(ByteBufferInput input) {
+        standardProfileStart = input.position();
         int encodedVersion = input.readInt();
         boolean frontingFormat = (encodedVersion & FRONTING_VERSION_FLAG) != 0;
         int version = encodedVersion & ~FRONTING_VERSION_FLAG;
@@ -568,11 +579,17 @@ public abstract class StandardV2RayBean extends AbstractBean {
         }
         if (version >= 16) {
             packetEncoding = input.readString();
+            if (legacyWsProfile && !isLegacyPacketEncoding(packetEncoding)) {
+                throw new KryoException("Invalid packet encoding in legacy WebSocket profile");
+            }
         }
         if (version >= 19) {
             mux = input.readBoolean();
             muxConcurrency = input.readInt();
             muxPacketEncoding = input.readString();
+            if (legacyWsProfile && !isLegacyPacketEncoding(muxPacketEncoding)) {
+                throw new KryoException("Invalid mux encoding in legacy WebSocket profile");
+            }
         }
         if (version >= 32) {
             if (this instanceof ShadowsocksBean) {
@@ -583,6 +600,11 @@ public abstract class StandardV2RayBean extends AbstractBean {
             }
             singMux = input.readBoolean();
             singMuxProtocol = input.readString();
+            if (legacyWsProfile && singMuxProtocol != null && !singMuxProtocol.isEmpty()
+                    && !"h2mux".equals(singMuxProtocol) && !"smux".equals(singMuxProtocol)
+                    && !"yamux".equals(singMuxProtocol)) {
+                throw new KryoException("Invalid mux protocol in legacy WebSocket profile");
+            }
             singMuxMaxConnections = input.readInt();
             singMuxMinStreams = input.readInt();
             singMuxMaxStreams = input.readInt();
@@ -603,10 +625,30 @@ public abstract class StandardV2RayBean extends AbstractBean {
         if (version >= 39) {
             echQueryName = input.readString();
         }
+        standardProfileEnd = input.position();
     }
 
     public final boolean isLegacyWsProfile() {
         return legacyWsProfile;
+    }
+
+    public final boolean matchesLegacyProfile(byte[] bytes, boolean fronting) {
+        if (!legacyWsProfile) return true;
+        initializeDefaultValues();
+        try (ByteBufferOutput output = new ByteBufferOutput(256, -1)) {
+            // A shifted read can consume the whole buffer without throwing. Require
+            // exact re-encoding as well, including the original boolean/string bytes.
+            // Only compare this layer: subclasses (notably HTTP v3 -> v5) have
+            // independent migrations and may legitimately re-encode differently.
+            serializeStandard(output, 40, fronting);
+            return Arrays.equals(Arrays.copyOfRange(bytes, standardProfileStart, standardProfileEnd),
+                    output.toBytes());
+        }
+    }
+
+    private static boolean isLegacyPacketEncoding(String value) {
+        return value == null || value.isEmpty() || "none".equals(value)
+                || "packet".equals(value) || "xudp".equals(value);
     }
 
     // Called with a complete, byte-array-backed profile, including subclass fields
