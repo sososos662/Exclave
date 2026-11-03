@@ -67,7 +67,11 @@ fun Project.requireLocalProperties(): Properties {
 fun Project.setupCommon(projectName: String = "") {
     android.apply {
         buildToolsVersion = "37.0.0"
-        compileSdk = 37
+        compileSdk {
+            version = release(37) {
+                minorApiLevel = 2
+            }
+        }
         defaultConfig.minSdk = if (projectName.lowercase() == "naive") 24 else 21
         compileOptions.sourceCompatibility = JavaVersion.VERSION_21
         compileOptions.targetCompatibility = JavaVersion.VERSION_21
@@ -199,14 +203,14 @@ fun Project.setupApp() {
         compileOptions.isCoreLibraryDesugaringEnabled = true
         flavorDimensions.add("vendor")
         productFlavors.create("oss") {
-            minSdk = 23
+            minSdk = 24
         }
         productFlavors.create("legacy") {
             minSdk = 21
             proguardFiles("proguard-rules-legacy.pro")
         }
         tasks.register("downloadAssets") {
-            downloadAssets(update = false)
+            downloadAssets()
         }
         tasks.register("updateAssets") {
             downloadRootCAList()

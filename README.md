@@ -2,6 +2,20 @@
 
 Exclave is a proxy client.
 
+## Fronting fork
+
+This fork tracks the stable upstream **0.17.66** and preserves the optional
+plaintext WebSocket fronting extension (`frontingHost` / `fh`). It prepends an
+HTTP HEAD request; it is not TLS domain fronting and does not encrypt WS traffic.
+
+- [Download this fork](https://github.com/sososos662/Exclave/releases)
+- [Fork changes and upgrade notes](FRONTING_RELEASE_NOTES.md)
+- Development branch: `dev-fronting`; core branch: `sososos662/exclave-core:fronting-ws`.
+
+The original download links and signing certificate below refer to **upstream**,
+not to this fork. Back up profiles before upgrading; do not restore a fork's
+binary database into the original app.
+
 <details>
 
 Features:
@@ -25,11 +39,12 @@ Some supported protocols:
 - VMess (with various optional sub-protocols)
 - VLESS (with various optional sub-protocols)
 - WireGuard (TCP and UDP only)
+- MASQUE (a.k.a. CONNECT-IP, TCP and UDP only)
 - TrustTunnel (no ICMP echo support)
 - Snell v4 and Snell v6
 - ShadowQUIC
 - SSH proxy ("dynamic port forwarding")
-- HTTP CONNECT tunnel (HTTP/1.1, HTTP/1.1 with TLS, HTTP/2 and HTTP/3)
+- HTTP CONNECT tunnel (HTTP/1.1, HTTP/1.1 with TLS, HTTP/2 and HTTP/3, with CONNECT-UDP support)
 - SOCKS4, SOCKS4A and SOCKS5
 
 </details>
@@ -44,7 +59,7 @@ Some supported protocols:
 
   SHA-256 hash of the signing certificate: `e9fe39e1ce254c50c2f9470a757b378c0b7cc536119867f7691405b592e6994b`
 
-  The default flavor (versions without `-legacy` suffix) supports Android 6.0+. The legacy flavor (versions with `-legacy` suffix, with some Gradle dependencies pinned to old versions) supports Android 5.0+. The legacy flavor is for old devices only and using it on new devices may lead to [unexpected behaviors](https://issuetracker.google.com/issues/519796838). The support for the legacy flavor is on a best-efforts basis and may be ended at any time.
+  The default flavor (versions without `-legacy` suffix) supports Android 7.0+. The legacy flavor (versions with `-legacy` suffix, with some Gradle dependencies pinned to old versions) supports Android 5.0+. The legacy flavor is for old devices only and using it on new devices may lead to [unexpected behaviors](https://issuetracker.google.com/issues/519796838). The support for the legacy flavor is on a best-efforts basis and may be ended at any time.
 
 - NaïveProxy Plugin
 
@@ -107,7 +122,7 @@ Exclave is licensed under the GNU General Public License as published by the Fre
 ## Build from source
 
 - Install and configure JDK 21, Go 1.27 and Go Mobile.
-- Install and configure Android SDK Platform 37.0, Android SDK Build-Tools 37.0.0, Android SDK Platform-Tools and Android NDK r29 through Android Studio or Android SDK Command-line Tools.
+- Install and configure Android SDK Platform 37.2, Android SDK Build-Tools 37.0.0, Android SDK Platform-Tools and Android NDK r30 through Android Studio or Android SDK Command-line Tools.
 - Replace `release.keystore` with your own. It can be generated with Java `keytool`.
 - Create a new `local.properties` file if it does not exist. Append the following lines to `local.properties`.
 ```

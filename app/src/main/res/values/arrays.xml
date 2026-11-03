@@ -190,11 +190,13 @@
         <item />
         <item>TCP</item>
         <item>UDP</item>
+        <item>TCP,UDP</item>
     </string-array>
     <string-array name="route_protocol_value">
         <item />
         <item>tcp</item>
         <item>udp</item>
+        <item>tcp,udp</item>
     </string-array>
     <string-array name="outbound_entry">
         <item>@string/route_proxy</item>
@@ -548,7 +550,59 @@
         <item>hello360_11_0</item>
     </string-array>
 
+    <string-array name="reality_fingerprint_entry">
+        <item>@string/disable</item>
+        <item>chrome</item>
+        <item>firefox</item>
+        <item>safari</item>
+        <item>ios</item>
+        <item>edge</item>
+        <item>qq</item>
+        <item>random</item>
+        <item>randomized</item>
+        <item>randomizednoalpn</item>
+        <item>hellofirefox_120</item>
+        <item>hellofirefox_148</item>
+        <item>hellochrome_120</item>
+        <item>hellochrome_131</item>
+        <item>hellochrome_133</item>
+        <item>helloios_13</item>
+        <item>helloios_14</item>
+        <item>helloedge_106</item>
+        <item>hellosafari_26_3</item>
+        <item>hello360_11_0</item>
+        <item>helloqq_11_1</item>
+        <item>hellogolang</item>
+        <item>hellorandomized</item>
+        <item>hellorandomizedalpn</item>
+        <item>hellorandomizednoalpn</item>
+        <item>hellofirefox_auto</item>
+        <item>hellofirefox_63</item>
+        <item>hellofirefox_65</item>
+        <item>hellofirefox_99</item>
+        <item>hellofirefox_102</item>
+        <item>hellofirefox_105</item>
+        <item>hellochrome_auto</item>
+        <item>hellochrome_70</item>
+        <item>hellochrome_72</item>
+        <item>hellochrome_83</item>
+        <item>hellochrome_87</item>
+        <item>hellochrome_96</item>
+        <item>hellochrome_100</item>
+        <item>hellochrome_102</item>
+        <item>hellochrome_106_shuffle</item>
+        <item>helloios_auto</item>
+        <item>helloedge_85</item>
+        <item>helloedge_auto</item>
+        <item>hellosafari_16_0</item>
+        <item>hellosafari_auto</item>
+        <item>helloqq_auto</item>
+        <item>hellochrome_115_pq</item>
+        <item>hellochrome_120_pq</item>
+    </string-array>
+
     <string-array name="reality_fingerprint_value">
+        <item />
         <item>chrome</item>
         <item>firefox</item>
         <item>safari</item>
@@ -644,9 +698,9 @@
     </string-array>
 
     <string-array name="root_ca_provider_entry">
-        <item>@string/root_ca_mozilla</item>
-        <item>@string/root_ca_system</item>
-        <item>@string/root_ca_system_and_user</item>
+        <item>Mozilla</item>
+        <item>Go</item>
+        <item>Android</item>
         <item>@string/route_rules_custom</item>
     </string-array>
 
@@ -892,6 +946,11 @@
         <item>@string/stun_legacy_test</item>
         <item>@string/udp</item>
         <item>@string/tcp</item>
+    </string-array>
+
+    <string-array name="masque_transport_layer_encryption_value">
+        <item/>
+        <item>tls</item>
     </string-array>
 
 </resources>

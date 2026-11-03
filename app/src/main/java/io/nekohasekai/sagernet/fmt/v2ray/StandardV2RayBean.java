@@ -21,6 +21,7 @@ package io.nekohasekai.sagernet.fmt.v2ray;
 
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
+import com.esotericsoftware.kryo.KryoException;
 
 import io.nekohasekai.sagernet.fmt.AbstractBean;
 import io.nekohasekai.sagernet.fmt.shadowsocks.ShadowsocksBean;
@@ -30,6 +31,12 @@ import io.nekohasekai.sagernet.ktx.NetsKt;
 import libexclavecore.Libexclavecore;
 
 public abstract class StandardV2RayBean extends AbstractBean {
+
+    // Keep upstream's schema number in the low bits, but do not reuse its namespace.
+    // The first fronting release and upstream both used 40 with different WS layouts.
+    private static final int FRONTING_VERSION_FLAG = 0x10000;
+    private transient boolean readLegacyWsFronting = true;
+    private transient boolean legacyWsProfile;
 
     public String uuid;
     public String encryption;
@@ -155,7 +162,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
         if (realityPublicKey == null) realityPublicKey = "";
         if (realityShortId == null) realityShortId = "";
         if (realityMldsa65Verify == null) realityMldsa65Verify = "";
-        if (realityFingerprint == null) realityFingerprint = "chrome";
+        if (realityFingerprint == null) realityFingerprint = "";
         if (realityDisableX25519Mlkem768 == null) realityDisableX25519Mlkem768 = false;
 
         if (hy2DownMbps == null) hy2DownMbps = 0L;
@@ -181,7 +188,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
 
     @Override
     public void serialize(ByteBufferOutput output) {
-        output.writeInt(40);
+        output.writeInt(FRONTING_VERSION_FLAG | 40);
         super.serialize(output);
 
         output.writeString(uuid);
@@ -324,11 +331,14 @@ public abstract class StandardV2RayBean extends AbstractBean {
 
     @Override
     public void deserialize(ByteBufferInput input) {
-        int version = input.readInt();
+        int encodedVersion = input.readInt();
+        boolean frontingFormat = (encodedVersion & FRONTING_VERSION_FLAG) != 0;
+        int version = encodedVersion & ~FRONTING_VERSION_FLAG;
         super.deserialize(input);
         uuid = input.readString();
         encryption = input.readString();
         type = input.readString();
+        legacyWsProfile = encodedVersion == 40 && "ws".equals(type);
 
         switch (type) {
             case "tcp": {
@@ -350,7 +360,7 @@ public abstract class StandardV2RayBean extends AbstractBean {
                 if (version >= 2) {
                     earlyDataHeaderName = input.readString();
                 }
-                if (version >= 40) {
+                if (frontingFormat || legacyWsProfile && readLegacyWsFronting) {
                     frontingHost = input.readString();
                 }
                 break;
@@ -453,10 +463,18 @@ public abstract class StandardV2RayBean extends AbstractBean {
         }
 
         security = input.readString();
+        if (legacyWsProfile && !"none".equals(security) && !"tls".equals(security)
+                && !"reality".equals(security)) {
+            throw new KryoException("Invalid security in legacy WebSocket profile");
+        }
         switch (security) {
             case "tls": {
                 sni = input.readString();
                 alpn = input.readString();
+                if (version <= 39 && type.equals("quic") && (alpn == null || NetsKt.listByLineOrComma(alpn).isEmpty())) {
+                    // https://github.com/ExclaveNetwork/Exclave/issues/488
+                    alpn = "h2\nhttp/1.1";
+                }
                 if (version >= 1) {
                     certificates = input.readString();
                     pinnedPeerCertificateChainSha256 = input.readString();
@@ -584,6 +602,21 @@ public abstract class StandardV2RayBean extends AbstractBean {
         }
         if (version >= 39) {
             echQueryName = input.readString();
+        }
+    }
+
+    public final boolean isLegacyWsProfile() {
+        return legacyWsProfile;
+    }
+
+    // Called with a complete, byte-array-backed profile, including subclass fields
+    // and AbstractBean metadata. Checking only the WS header would be ambiguous
+    // when a fronting host or TLS SNI is literally "none", "tls" or "reality".
+    public final void deserializeProfile(ByteBufferInput input, boolean readLegacyWsFronting) {
+        this.readLegacyWsFronting = readLegacyWsFronting;
+        super.deserializeFromBuffer(input);
+        if (legacyWsProfile && input.position() != input.limit()) {
+            throw new KryoException("Unexpected trailing data in legacy WebSocket profile");
         }
     }
 

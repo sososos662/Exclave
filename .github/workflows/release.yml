@@ -7,6 +7,8 @@ on:
       - "app/**"
       - "buildSrc/**"
       - "library/**"
+      - "gradle/**"
+      - "version.properties"
       - ".github/workflows/release.yml"
   workflow_dispatch:
     inputs:
@@ -19,6 +21,8 @@ on:
       tag:
         description: 'Release Tag'
         required: false
+permissions:
+  contents: read
 jobs:
   build:
     name: Build
@@ -26,16 +30,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Validate release tag
+        if: github.event.inputs.release == 'y'
+        env:
+          RELEASE_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          version=$(sed -n 's/^VERSION_NAME=//p' version.properties | tr -d '\r')
+          test "$RELEASE_TAG" = "v$version"
+          existing=$(git ls-remote --tags origin "refs/tags/$RELEASE_TAG" | cut -f1)
+          if [ -n "$existing" ] && [ "$existing" != "$GITHUB_SHA" ]; then
+            echo "Release tag already points to another commit" >&2
+            exit 1
+          fi
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
-          go-version: 1.27.1
+          go-version: 1.27.3
           cache-dependency-path: "library/core/go.sum"
       - name: Setup Go Mobile
         # https://github.com/golang/mobile/blob/c31d5b91ecc32c0d598b8fe8457d244ca0b4e815/cmd/gomobile/init.go#L83
         run: |
-          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260821190718-4776eadac327
-          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20260821190718-4776eadac327
+          go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20261011034528-197770444867
+          go install golang.org/x/mobile/cmd/gobind@v0.0.0-20261011034528-197770444867
       - name: Setup Java
         uses: actions/setup-java@v6
         with:
@@ -46,7 +62,10 @@ jobs:
         id: setup-ndk
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r29
+          ndk-version: r30
+      - name: Test fronting core
+        working-directory: library/core
+        run: go test -race github.com/exclavenetwork/exclave-core/v5/transport/internet/websocket github.com/exclavenetwork/exclave-core/v5/infra/conf/v4 -count=1 -timeout=5m
       - name: Native Build
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
@@ -69,11 +88,31 @@ jobs:
           echo "$KEYSTORE_B64" | base64 -d > release.keystore
           test -s release.keystore
       - name: Gradle Build
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
         run: |
           echo "sdk.dir=${ANDROID_HOME}" > local.properties
-          export LOCAL_PROPERTIES="${{ secrets.LOCAL_PROPERTIES }}"
           ./gradlew :app:downloadAssets
+          ./gradlew :app:testOssDebugUnitTest :app:testLegacyDebugUnitTest
           ./gradlew :app:assembleOssRelease :app:assembleLegacyRelease
+      - name: Verify upgrade signing certificate
+        run: |
+          signer="$ANDROID_HOME/build-tools/37.0.0/apksigner"
+          previous="$RUNNER_TEMP/Exclave-previous.apk"
+          curl --fail --location --retry 3 'https://github.com/sososos662/Exclave/releases/download/v0.17.55-fronting.2/Exclave-0.17.55-arm64-v8a.apk' --output "$previous"
+          expected=$("$signer" verify --print-certs "$previous" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          test -n "$expected"
+          while IFS= read -r apk; do
+            actual=$("$signer" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+            test "$actual" = "$expected" || { echo "Signing certificate changed: $apk" >&2; exit 1; }
+          done < <(find app/build/outputs/apk -name '*.apk')
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Profile-test-results
+          path: app/build/reports/tests
+          if-no-files-found: ignore
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -106,15 +145,14 @@ jobs:
         with:
           name: APKs-legacy
           path: artifacts/legacy
-      - name: Publish Pre-release
-        if: github.event.inputs.prerelease == 'y'
-        run: |
-          mkdir apks
-          find artifacts -name "*.apk" -exec cp {} apks \;
-          gh release create ${{ github.event.inputs.tag }} --notes="" --title=${{ github.event.inputs.tag }} --prerelease ./apks/*
       - name: Publish Release
-        if: github.event.inputs.prerelease != 'y'
+        env:
+          RELEASE_TAG: ${{ github.event.inputs.tag }}
+          PRERELEASE: ${{ github.event.inputs.prerelease }}
         run: |
           mkdir apks
           find artifacts -name "*.apk" -exec cp {} apks \;
-          gh release create ${{ github.event.inputs.tag }} --notes="" --title=${{ github.event.inputs.tag }} ./apks/*
+          sha256sum apks/*.apk > apks/SHA256SUMS.txt
+          flags=()
+          if [ "$PRERELEASE" = y ]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "$RELEASE_TAG" --notes-file FRONTING_RELEASE_NOTES.md "${flags[@]}" ./apks/*

@@ -25,7 +25,6 @@ import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import io.nekohasekai.sagernet.database.SubscriptionBean;
@@ -37,6 +36,7 @@ import io.nekohasekai.sagernet.fmt.internal.BalancerBean;
 import io.nekohasekai.sagernet.fmt.internal.ChainBean;
 import io.nekohasekai.sagernet.fmt.internal.ConfigBean;
 import io.nekohasekai.sagernet.fmt.juicity.JuicityBean;
+import io.nekohasekai.sagernet.fmt.masque.MASQUEBean;
 import io.nekohasekai.sagernet.fmt.mieru.MieruBean;
 import io.nekohasekai.sagernet.fmt.naive.NaiveBean;
 import io.nekohasekai.sagernet.fmt.shadowquic.ShadowQUICBean;
@@ -50,6 +50,7 @@ import io.nekohasekai.sagernet.fmt.snell.SnellBean;
 import io.nekohasekai.sagernet.fmt.tuic5.Tuic5Bean;
 import io.nekohasekai.sagernet.fmt.v2ray.VLESSBean;
 import io.nekohasekai.sagernet.fmt.v2ray.VMessBean;
+import io.nekohasekai.sagernet.fmt.v2ray.StandardV2RayBean;
 import io.nekohasekai.sagernet.fmt.wireguard.WireGuardBean;
 import io.nekohasekai.sagernet.ktx.KryosKt;
 import io.nekohasekai.sagernet.ktx.Logs;
@@ -71,15 +72,37 @@ public class KryoConverters {
 
     public static <T extends Serializable> T deserialize(T bean, byte[] bytes) {
         if (bytes == null) return bean;
-        ByteArrayInputStream input = new ByteArrayInputStream(bytes);
-        ByteBufferInput buffer = KryosKt.byteBuffer(input);
+        ByteBufferInput buffer = new ByteBufferInput(bytes);
         try {
-            bean.deserializeFromBuffer(buffer);
+            if (bean instanceof StandardV2RayBean profile) {
+                try {
+                    // Prefer our released v40 layout so existing installations upgrade intact.
+                    profile.deserializeProfile(buffer, true);
+                } catch (KryoException | IllegalArgumentException | IndexOutOfBoundsException e) {
+                    if (!profile.isLegacyWsProfile()) throw e;
+                    // Upstream v40 has no frontingHost. Retry on a FRESH bean: a failed
+                    // TLS/REALITY read must not leave stale fields in the imported profile.
+                    T upstream = newBean(bean);
+                    ((StandardV2RayBean) upstream).deserializeProfile(new ByteBufferInput(bytes), false);
+                    bean = upstream;
+                }
+            } else {
+                bean.deserializeFromBuffer(buffer);
+            }
         } catch (KryoException e) {
             Logs.INSTANCE.w(e);
         }
         bean.initializeDefaultValues();
         return bean;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Serializable> T newBean(T bean) {
+        try {
+            return (T) bean.getClass().getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new KryoException("Cannot create profile for legacy format migration", e);
+        }
     }
 
     @TypeConverter
@@ -194,6 +217,12 @@ public class KryoConverters {
     public static SnellBean snellDeserialize(byte[] bytes) {
         if (bytes == null || bytes.length == 0) return null;
         return deserialize(new SnellBean(), bytes);
+    }
+
+    @TypeConverter
+    public static MASQUEBean masqueDeserialize(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return null;
+        return deserialize(new MASQUEBean(), bytes);
     }
 
     @TypeConverter

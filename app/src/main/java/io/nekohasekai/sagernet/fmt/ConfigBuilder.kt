@@ -48,6 +48,7 @@ import io.nekohasekai.sagernet.fmt.hysteria2.Hysteria2Bean
 import io.nekohasekai.sagernet.fmt.internal.BalancerBean
 import io.nekohasekai.sagernet.fmt.internal.ConfigBean
 import io.nekohasekai.sagernet.fmt.juicity.JuicityBean
+import io.nekohasekai.sagernet.fmt.masque.MASQUEBean
 import io.nekohasekai.sagernet.fmt.mieru.MieruBean
 import io.nekohasekai.sagernet.fmt.shadowquic.ShadowQUICBean
 import io.nekohasekai.sagernet.fmt.shadowsocks.ShadowsocksBean
@@ -104,12 +105,12 @@ import io.nekohasekai.sagernet.fmt.v2ray.V2RayConfig.WebSocketObject
 import io.nekohasekai.sagernet.fmt.v2ray.V2RayConfig.WireGuardOutboundConfigurationObject
 import io.nekohasekai.sagernet.fmt.v2ray.VLESSBean
 import io.nekohasekai.sagernet.fmt.v2ray.VMessBean
+import io.nekohasekai.sagernet.fmt.v2ray.getXrayRange
 import io.nekohasekai.sagernet.fmt.wireguard.WireGuardBean
 import io.nekohasekai.sagernet.ktx.app
 import io.nekohasekai.sagernet.ktx.getArray
 import io.nekohasekai.sagernet.ktx.getBoolean
 import io.nekohasekai.sagernet.ktx.getBooleanProperty
-import io.nekohasekai.sagernet.ktx.getInt
 import io.nekohasekai.sagernet.ktx.getObject
 import io.nekohasekai.sagernet.ktx.getString
 import io.nekohasekai.sagernet.ktx.getStringArray
@@ -827,6 +828,12 @@ fun buildV2RayConfig(
                                                         pass = bean.password
                                                     })
                                                 }
+                                                if (bean.connectUDP) {
+                                                    connectUDP = true
+                                                    if (bean.uriTemplate.isNotEmpty()) {
+                                                        uriTemplate = bean.uriTemplate
+                                                    }
+                                                }
                                             })
                                         }
                                     )
@@ -1065,19 +1072,13 @@ fun buildV2RayConfig(
                                                     try {
                                                         parseJson(bean.splithttpExtra).asJsonObject?.also { extra ->
                                                             // fuck RPRX `extra`
-                                                            extra.getInt("scMaxEachPostBytes", ignoreCase = true)?.also {
-                                                                scMaxEachPostBytes = it.toString()
-                                                            } ?: extra.getString("scMaxEachPostBytes", ignoreCase = true)?.also {
+                                                            extra.getXrayRange("scMaxEachPostBytes")?.also {
                                                                 scMaxEachPostBytes = it
                                                             }
-                                                            extra.getInt("scMinPostsIntervalMs", ignoreCase = true)?.also {
-                                                                scMinPostsIntervalMs = it.toString()
-                                                            } ?: extra.getString("scMinPostsIntervalMs", ignoreCase = true)?.also {
+                                                            extra.getXrayRange("scMinPostsIntervalMs")?.also {
                                                                 scMinPostsIntervalMs = it
                                                             }
-                                                            extra.getInt("xPaddingBytes", ignoreCase = true)?.also {
-                                                                xPaddingBytes = it.toString()
-                                                            } ?: extra.getString("xPaddingBytes", ignoreCase = true)?.also {
+                                                            extra.getXrayRange("xPaddingBytes")?.also {
                                                                 xPaddingBytes = it
                                                             }
                                                             extra.getBoolean("noGRPCHeader", ignoreCase = true)?.also {
@@ -1093,29 +1094,19 @@ fun buildV2RayConfig(
                                                             }
                                                             extra.getObject("xmux", ignoreCase = true)?.also { xmuxSettings ->
                                                                 xmux = SplitHTTPObject.XmuxObject().apply {
-                                                                    xmuxSettings.getInt("maxConcurrency", ignoreCase = true)?.also {
-                                                                        maxConcurrency = it.toString()
-                                                                    } ?: xmuxSettings.getString("maxConcurrency", ignoreCase = true)?.also {
+                                                                    xmuxSettings.getXrayRange("maxConcurrency")?.also {
                                                                         maxConcurrency = it
                                                                     }
-                                                                    xmuxSettings.getInt("maxConnections", ignoreCase = true)?.also {
-                                                                        maxConnections = it.toString()
-                                                                    } ?: xmuxSettings.getString("maxConnections", ignoreCase = true)?.also {
+                                                                    xmuxSettings.getXrayRange("maxConnections")?.also {
                                                                         maxConnections = it
                                                                     }
-                                                                    xmuxSettings.getInt("cMaxReuseTimes", ignoreCase = true)?.also {
-                                                                        cMaxReuseTimes = it.toString()
-                                                                    } ?: xmuxSettings.getString("cMaxReuseTimes", ignoreCase = true)?.also {
+                                                                    xmuxSettings.getXrayRange("cMaxReuseTimes")?.also {
                                                                         cMaxReuseTimes = it
                                                                     }
-                                                                    xmuxSettings.getInt("hMaxRequestTimes", ignoreCase = true)?.also {
-                                                                        hMaxRequestTimes = it.toString()
-                                                                    } ?: xmuxSettings.getString("hMaxRequestTimes", ignoreCase = true)?.also {
+                                                                    xmuxSettings.getXrayRange("hMaxRequestTimes")?.also {
                                                                         hMaxRequestTimes = it
                                                                     }
-                                                                    xmuxSettings.getInt("hMaxReusableSecs", ignoreCase = true)?.also {
-                                                                        hMaxReusableSecs = it.toString()
-                                                                    } ?: xmuxSettings.getString("hMaxReusableSecs", ignoreCase = true)?.also {
+                                                                    xmuxSettings.getXrayRange("hMaxReusableSecs")?.also {
                                                                         hMaxReusableSecs = it
                                                                     }
                                                                 }
@@ -1162,9 +1153,7 @@ fun buildV2RayConfig(
                                                             extra.getString("uplinkDataKey", ignoreCase = true)?.also {
                                                                 uplinkDataKey = it
                                                             }
-                                                            extra.getInt("uplinkChunkSize", ignoreCase = true)?.also {
-                                                                uplinkChunkSize = it.toString()
-                                                            } ?: extra.getString("uplinkChunkSize", ignoreCase = true)?.also {
+                                                            extra.getXrayRange("uplinkChunkSize")?.also {
                                                                 uplinkChunkSize = it
                                                             }
                                                         }
@@ -1534,6 +1523,12 @@ fun buildV2RayConfig(
                                         port = bean.serverPort
                                         if (bean.username.isNotEmpty()) username = bean.username
                                         if (bean.password.isNotEmpty()) password = bean.password
+                                        if (bean.connectUDP) {
+                                            connectUDP = true
+                                            if (bean.uriTemplate.isNotEmpty()) {
+                                                uriTemplate = bean.uriTemplate
+                                            }
+                                        }
                                     }
                                 )
                                 streamSettings = StreamSettingsObject().apply {
@@ -1894,7 +1889,7 @@ fun buildV2RayConfig(
                                         if (bean.allowInsecure) {
                                             allowInsecure = true
                                         }
-                                        if (protocol == "https") {
+                                        if (bean.protocol == "https") {
                                             val overrideFingerprint = DataStore.experimentalFlagsProperties.getProperty("overrideUTLSFingerprintForTLS")
                                             if (!overrideFingerprint.isNullOrEmpty()) {
                                                 fingerprint = overrideFingerprint
@@ -1916,6 +1911,24 @@ fun buildV2RayConfig(
                                             serverNameToVerify = bean.serverNameToVerify.listByLineOrComma()
                                         }
                                     }
+                                    if (bean.protocol == "https" && DataStore.enableFragment) {
+                                        sockopt = StreamSettingsObject.SockoptObject().apply {
+                                            tlsFragmentation = StreamSettingsObject.SockoptObject.TLSFragmentationObject().apply {
+                                                when (DataStore.fragmentMethod) {
+                                                    TLS_FRAGMENTATION_METHOD.TLS_RECORD_FRAGMENTATION -> {
+                                                        tlsRecordFragmentation = true
+                                                    }
+                                                    TLS_FRAGMENTATION_METHOD.TCP_SEGMENTATION -> {
+                                                        tcpSegmentation = true
+                                                    }
+                                                    TLS_FRAGMENTATION_METHOD.TLS_RECORD_FRAGMENTATION_AND_TCP_SEGMENTATION -> {
+                                                        tlsRecordFragmentation = true
+                                                        tcpSegmentation = true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             } else if (bean is ShadowQUICBean) {
                                 protocol = "shadowquic"
@@ -1934,6 +1947,100 @@ fun buildV2RayConfig(
                                         alpn = bean.alpn.listByLineOrComma()
                                     }
                                 })
+                            } else if (bean is MASQUEBean) {
+                                protocol = "masque"
+                                settings = LazyOutboundConfigurationObject(this,
+                                    V2RayConfig.MASQUEOutboundConfigurationObject().apply {
+                                        address = bean.serverAddress
+                                        port = bean.serverPort
+                                        if (bean.username.isNotEmpty()) username = bean.username
+                                        if (bean.password.isNotEmpty()) password = bean.password
+                                        if (bean.uriTemplate.isNotEmpty()) uriTemplate = bean.uriTemplate
+                                        if (bean.http3) http3 = true
+                                        if (bean.mtu != 0) mtu = bean.mtu
+                                    }
+                                )
+                                if (bean.security == "tls") {
+                                    streamSettings = StreamSettingsObject().apply {
+                                        security = "tls"
+                                        tlsSettings = TLSObject().apply {
+                                            if (bean.sni.isNotEmpty()) {
+                                                serverName = bean.sni
+                                            }
+                                            if (bean.certificates.isNotEmpty() || bean.mtlsCertificate.isNotEmpty() || bean.mtlsCertificatePrivateKey.isNotEmpty()) {
+                                                certificates = mutableListOf()
+                                                if (bean.certificates.isNotEmpty()) {
+                                                    disableSystemRoot = true
+                                                    certificates.add(TLSObject.CertificateObject().apply {
+                                                        usage = "verify"
+                                                        certificate = bean.certificates.lines()
+                                                    })
+                                                }
+                                                if (bean.mtlsCertificate.isNotEmpty() || bean.mtlsCertificatePrivateKey.isNotEmpty()) {
+                                                    certificates.add(TLSObject.CertificateObject().apply {
+                                                        usage = "encipherment"
+                                                        certificate = bean.mtlsCertificate.lines()
+                                                        key = bean.mtlsCertificatePrivateKey.lines()
+                                                    })
+                                                }
+                                            }
+                                            if (bean.pinnedPeerCertificateSha256.isNotEmpty()) {
+                                                pinnedPeerCertificateSha256 = mutableListOf()
+                                                bean.pinnedPeerCertificateSha256.listByLineOrComma().forEach {
+                                                    pinnedPeerCertificateSha256.add(it.replace(":", ""))
+                                                }
+                                            }
+                                            if (bean.pinnedPeerCertificatePublicKeySha256.isNotEmpty()) {
+                                                pinnedPeerCertificatePublicKeySha256 = bean.pinnedPeerCertificatePublicKeySha256.listByLineOrComma()
+                                            }
+                                            if (bean.pinnedPeerCertificateChainSha256.isNotEmpty()) {
+                                                pinnedPeerCertificateChainSha256 = bean.pinnedPeerCertificateChainSha256.listByLineOrComma()
+                                            }
+                                            if (bean.allowInsecure) {
+                                                allowInsecure = true
+                                            }
+                                            if (!bean.http3) {
+                                                val overrideFingerprint = DataStore.experimentalFlagsProperties.getProperty("overrideUTLSFingerprintForTLS")
+                                                if (!overrideFingerprint.isNullOrEmpty()) {
+                                                    fingerprint = overrideFingerprint
+                                                } else if (bean.utlsFingerprint.isNotEmpty()) {
+                                                    fingerprint = bean.utlsFingerprint
+                                                }
+                                            }
+                                            if (bean.echEnabled) {
+                                                ech = TLSObject.ECHObject().apply {
+                                                    enabled = bean.echEnabled
+                                                    if (bean.echConfigList.isNotEmpty()) {
+                                                        config = bean.echConfigList
+                                                    } else if (bean.echQueryName.isNotEmpty()) {
+                                                        queryDomain = bean.echQueryName
+                                                    }
+                                                }
+                                            }
+                                            if (bean.serverNameToVerify.isNotEmpty()) {
+                                                serverNameToVerify = bean.serverNameToVerify.listByLineOrComma()
+                                            }
+                                        }
+                                        if (!bean.http3 && DataStore.enableFragment) {
+                                            sockopt = StreamSettingsObject.SockoptObject().apply {
+                                                tlsFragmentation = StreamSettingsObject.SockoptObject.TLSFragmentationObject().apply {
+                                                    when (DataStore.fragmentMethod) {
+                                                        TLS_FRAGMENTATION_METHOD.TLS_RECORD_FRAGMENTATION -> {
+                                                            tlsRecordFragmentation = true
+                                                        }
+                                                        TLS_FRAGMENTATION_METHOD.TCP_SEGMENTATION -> {
+                                                            tcpSegmentation = true
+                                                        }
+                                                        TLS_FRAGMENTATION_METHOD.TLS_RECORD_FRAGMENTATION_AND_TCP_SEGMENTATION -> {
+                                                            tlsRecordFragmentation = true
+                                                            tcpSegmentation = true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             if (bean is StandardV2RayBean && bean.mux) {
                                 mux = OutboundObject.MuxObject().apply {
@@ -2258,7 +2365,7 @@ fun buildV2RayConfig(
         for (rule in extraRules) {
             val uidList = mutableListOf<Int>()
             if (rule.packages.isNotEmpty() || rule.customPackageNames.isNotEmpty()) {
-                if (!isVpn) {
+                if (!isVpn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     alerts.add(Alerts.ROUTE_ALERT_NOT_VPN to rule.displayName())
                     continue
                 }
@@ -2502,15 +2609,12 @@ fun buildV2RayConfig(
                     // too dirty to read server addresses from a custom outbound config
                     // let users provide them manually
                     bean.serverAddresses.listByLineOrComma().forEach {
-                        when {
-                            it.isEmpty() -> {}
-                            !Libexclavecore.isIP(it) -> {
-                                bypassDomainSkipFakeDns.add("full:$it")
-                            }
+                        if (it.isNotEmpty() && !Libexclavecore.isIP(it)) {
+                            bypassDomainSkipFakeDns.add("full:$it")
                         }
                     }
                 } else {
-                    if (!Libexclavecore.isIP(serverAddress)) {
+                    if (serverAddress.isNotEmpty() && !Libexclavecore.isIP(serverAddress)) {
                         bypassDomainSkipFakeDns.add("full:$serverAddress")
                     }
                     when (bean) {
@@ -2518,7 +2622,7 @@ fun buildV2RayConfig(
                             if (bean.echEnabled && bean.echConfigList.isEmpty()) {
                                 if (bean.echQueryName.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.echQueryName}")
-                                } else {
+                                } else if (bean.sni.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.sni}")
                                 }
                             }
@@ -2527,7 +2631,7 @@ fun buildV2RayConfig(
                             if (bean.echEnabled && bean.echConfigList.isEmpty()) {
                                 if (bean.echQueryName.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.echQueryName}")
-                                } else {
+                                } else if (bean.sni.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.sni}")
                                 }
                             }
@@ -2536,7 +2640,7 @@ fun buildV2RayConfig(
                             if (bean.echEnabled && bean.echConfigList.isEmpty()) {
                                 if (bean.echQueryName.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.echQueryName}")
-                                } else {
+                                } else if (bean.sni.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.sni}")
                                 }
                             }
@@ -2545,7 +2649,7 @@ fun buildV2RayConfig(
                             if (bean.echEnabled && bean.echConfigList.isEmpty()) {
                                 if (bean.echQueryName.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.echQueryName}")
-                                } else {
+                                } else if (bean.sni.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.sni}")
                                 }
                             }
@@ -2554,7 +2658,7 @@ fun buildV2RayConfig(
                             if (bean.echEnabled && bean.echConfigList.isEmpty()) {
                                 if (bean.echQueryName.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.echQueryName}")
-                                } else {
+                                } else if (bean.sni.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.sni}")
                                 }
                             }
@@ -2563,7 +2667,7 @@ fun buildV2RayConfig(
                             if (bean.echEnabled && bean.echConfigList.isEmpty()) {
                                 if (bean.echQueryName.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.echQueryName}")
-                                } else {
+                                } else if (bean.sni.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.sni}")
                                 }
                             }
@@ -2572,7 +2676,7 @@ fun buildV2RayConfig(
                             if (bean.echEnabled && bean.echConfigList.isEmpty()) {
                                 if (bean.echQueryName.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.echQueryName}")
-                                } else {
+                                } else if (bean.sni.isNotEmpty()) {
                                     bypassDomainSkipFakeDns.add("full:${bean.sni}")
                                 }
                             }
@@ -2614,10 +2718,10 @@ fun buildV2RayConfig(
                 if (it.lowercase() != "localhost" && it.lowercase() != "fakedns") {
                     if (it.contains("://")) {
                         val url = Libexclavecore.parseURL(it)
-                        if (!Libexclavecore.isIP(url.host)) {
+                        if (url.host.isNotEmpty() && !Libexclavecore.isIP(url.host)) {
                             bypassDomainSkipFakeDns.add("full:${url.host}")
                         }
-                    } else if (!Libexclavecore.isIP(it)) {
+                    } else if (it.isNotEmpty() && !Libexclavecore.isIP(it)) {
                         bypassDomainSkipFakeDns.add("full:$it")
                     }
                 }
@@ -2629,10 +2733,10 @@ fun buildV2RayConfig(
                 if (it.lowercase() != "localhost" && it.lowercase() != "fakedns") {
                     if (it.contains("://")) {
                         val url = Libexclavecore.parseURL(it)
-                        if (!Libexclavecore.isIP(url.host)) {
+                        if (url.host.isNotEmpty() && !Libexclavecore.isIP(url.host)) {
                             bootstrapDomain.add("full:${url.host}")
                         }
-                    } else if (!Libexclavecore.isIP(it)) {
+                    } else if (it.isNotEmpty() && !Libexclavecore.isIP(it)) {
                         bootstrapDomain.add("full:$it")
                     }
                 }
@@ -2931,7 +3035,6 @@ fun buildCustomConfig(proxy: ProxyEntity, forTest: Boolean = false, forExport: B
                     routeOnly = DataStore.trafficSniffing && !DataStore.destinationOverride
                 }
             }
-            if (shouldDumpUID) dumpUID = true
         })
         inbounds.add(InboundObject().apply {
             tag = TAG_DNS_IN
