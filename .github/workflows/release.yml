@@ -2,7 +2,7 @@ name: Release Build
 on:
   push:
     branches:
-      - dev*
+      - main
     paths:
       - "app/**"
       - "buildSrc/**"

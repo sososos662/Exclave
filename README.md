@@ -10,7 +10,7 @@ HTTP HEAD request; it is not TLS domain fronting and does not encrypt WS traffic
 
 - [Download this fork](https://github.com/sososos662/Exclave/releases)
 - [Fork changes and upgrade notes](FRONTING_RELEASE_NOTES.md)
-- Development branch: `dev-fronting`; core branch: `sososos662/exclave-core:fronting-ws`.
+- Main branch: `main`; core branch: `sososos662/exclave-core:fronting-ws`.
 
 The original download links and signing certificate below refer to **upstream**,
 not to this fork. Back up profiles before upgrading; do not restore a fork's
